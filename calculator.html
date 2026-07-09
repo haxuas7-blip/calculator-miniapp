@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Calculator</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg: #12130f;
+    --surface: #1c1e17;
+    --surface-2: #262920;
+    --tape: #8a8f7c;
+    --ink: #f3f1e7;
+    --accent: #d6ff3f;
+    --accent-ink: #12130f;
+    --op: #3a3d30;
+    --danger: #e0654a;
+    --radius: 20px;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+    overscroll-behavior: none;
+    user-select: none;
+  }
+
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+  }
+
+  /* Tape: running log of the expression, like a receipt printer */
+  .tape {
+    flex: 0 0 auto;
+    min-height: 22px;
+    padding: 4px 6px 10px;
+    font-size: 13px;
+    color: var(--tape);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tape::-webkit-scrollbar { display: none; }
+
+  .display-wrap {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding: 0 6px 18px;
+    min-height: 90px;
+  }
+
+  .display {
+    font-size: clamp(38px, 11vw, 58px);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    word-break: break-all;
+    text-align: right;
+    transition: opacity 0.15s ease;
+  }
+  .display.err { color: var(--danger); font-size: clamp(22px, 6vw, 30px); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    flex: 0 0 auto;
+  }
+
+  button.key {
+    appearance: none;
+    border: none;
+    outline: none;
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 24px;
+    font-weight: 500;
+    padding: 0;
+    aspect-ratio: 1 / 0.82;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: transform 0.06s ease, background 0.12s ease;
+  }
+  button.key:active { transform: scale(0.94); background: var(--surface-2); }
+
+  button.key.fn {
+    background: var(--surface-2);
+    color: var(--accent);
+    font-size: 19px;
+  }
+
+  button.key.op {
+    background: var(--op);
+    color: var(--accent);
+    font-size: 26px;
+  }
+  button.key.op.active-op {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+
+  button.key.eq {
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-size: 26px;
+  }
+
+  button.key.zero { grid-column: span 2; aspect-ratio: unset; justify-content: flex-start; padding-left: 30px; }
+
+  .digit-count {
+    position: absolute;
+    bottom: 6px;
+    right: 10px;
+    font-size: 9px;
+    color: var(--tape);
+    opacity: 0.6;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="tape" id="tape"></div>
+  <div class="display-wrap">
+    <div class="display" id="display">0</div>
+  </div>
+
+  <div class="grid">
+    <button class="key fn" data-action="clear" id="clearBtn">AC</button>
+    <button class="key fn" data-action="negate">±</button>
+    <button class="key fn" data-action="percent">%</button>
+    <button class="key op" data-op="÷">÷</button>
+
+    <button class="key" data-digit="7">7</button>
+    <button class="key" data-digit="8">8</button>
+    <button class="key" data-digit="9">9</button>
+    <button class="key op" data-op="×">×</button>
+
+    <button class="key" data-digit="4">4</button>
+    <button class="key" data-digit="5">5</button>
+    <button class="key" data-digit="6">6</button>
+    <button class="key op" data-op="−">−</button>
+
+    <button class="key" data-digit="1">1</button>
+    <button class="key" data-digit="2">2</button>
+    <button class="key" data-digit="3">3</button>
+    <button class="key op" data-op="+">+</button>
+
+    <button class="key zero" data-digit="0">0</button>
+    <button class="key" data-action="decimal">.</button>
+    <button class="key eq" data-action="equals">=</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  const tg = window.Telegram && window.Telegram.WebApp;
+  if (tg) {
+    tg.ready();
+    tg.expand();
+    try {
+      document.documentElement.style.setProperty('--bg', tg.themeParams.bg_color ? tg.themeParams.bg_color : '#12130f');
+    } catch (e) {}
+  }
+
+  const display = document.getElementById('display');
+  const tape = document.getElementById('tape');
+  const clearBtn = document.getElementById('clearBtn');
+
+  let current = '0';
+  let previous = null;
+  let operator = null;
+  let overwrite = true;
+  let expressionTape = '';
+
+  function haptic(style) {
+    if (tg && tg.HapticFeedback) {
+      if (style === 'light') tg.HapticFeedback.impactOccurred('light');
+      else if (style === 'medium') tg.HapticFeedback.impactOccurred('medium');
+      else if (style === 'error') tg.HapticFeedback.notificationOccurred('error');
+    }
+  }
+
+  function formatNumber(numStr) {
+    if (numStr === 'Error') return numStr;
+    const neg = numStr.startsWith('-');
+    let s = neg ? numStr.slice(1) : numStr;
+    let [intPart, decPart] = s.split('.');
+    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    let out = intPart + (decPart !== undefined ? '.' + decPart : '');
+    return neg ? '-' + out : out;
+  }
+
+  function updateDisplay() {
+    display.textContent = formatNumber(current);
+    display.classList.toggle('err', current === 'Error');
+    tape.textContent = expressionTape;
+    clearBtn.textContent = overwrite && current === '0' && previous === null ? 'AC' : 'C';
+
+    document.querySelectorAll('.key.op').forEach(btn => {
+      btn.classList.toggle('active-op', operator === btn.dataset.op && overwrite);
+    });
+  }
+
+  function calc(a, b, op) {
+    a = parseFloat(a); b = parseFloat(b);
+    let result;
+    switch (op) {
+      case '+': result = a + b; break;
+      case '−': result = a - b; break;
+      case '×': result = a * b; break;
+      case '÷': result = b === 0 ? NaN : a / b; break;
+      default: return b;
+    }
+    if (!isFinite(result)) return 'Error';
+    result = Math.round((result + Number.EPSILON) * 1e10) / 1e10;
+    return String(result);
+  }
+
+  function inputDigit(d) {
+    if (current === 'Error') { current = '0'; }
+    if (overwrite) {
+      current = d;
+      overwrite = false;
+    } else {
+      if (current.replace('-', '').length >= 12) return;
+      current = current === '0' ? d : current + d;
+    }
+    updateDisplay();
+  }
+
+  function inputDecimal() {
+    if (current === 'Error') { current = '0'; overwrite = false; }
+    if (overwrite) { current = '0.'; overwrite = false; return updateDisplay(); }
+    if (!current.includes('.')) current += '.';
+    updateDisplay();
+  }
+
+  function chooseOperator(op) {
+    if (current === 'Error') return;
+    if (operator !== null && !overwrite) {
+      current = calc(previous, current, operator);
+    }
+    previous = current;
+    operator = op;
+    overwrite = true;
+    expressionTape = formatNumber(previous) + ' ' + operator;
+    updateDisplay();
+  }
+
+  function equals() {
+    if (operator === null || previous === null) return;
+    const a = previous, b = current, op = operator;
+    expressionTape = formatNumber(a) + ' ' + op + ' ' + formatNumber(b) + ' =';
+    current = calc(a, b, op);
+    previous = null;
+    operator = null;
+    overwrite = true;
+    if (current === 'Error') haptic('error'); else haptic('medium');
+    updateDisplay();
+  }
+
+  function clearAll() {
+    current = '0'; previous = null; operator = null; overwrite = true; expressionTape = '';
+    updateDisplay();
+  }
+
+  function clearEntry() {
+    current = '0'; overwrite = true;
+    updateDisplay();
+  }
+
+  function negate() {
+    if (current === 'Error' || current === '0') return;
+    current = current.startsWith('-') ? current.slice(1) : '-' + current;
+    updateDisplay();
+  }
+
+  function percent() {
+    if (current === 'Error') return;
+    current = String(parseFloat(current) / 100);
+    updateDisplay();
+  }
+
+  document.querySelectorAll('[data-digit]').forEach(btn => {
+    btn.addEventListener('click', () => { haptic('light'); inputDigit(btn.dataset.digit); });
+  });
+
+  document.querySelectorAll('[data-op]').forEach(btn => {
+    btn.addEventListener('click', () => { haptic('light'); chooseOperator(btn.dataset.op); });
+  });
+
+  document.querySelector('[data-action="decimal"]').addEventListener('click', () => { haptic('light'); inputDecimal(); });
+  document.querySelector('[data-action="equals"]').addEventListener('click', equals);
+  document.querySelector('[data-action="negate"]').addEventListener('click', () => { haptic('light'); negate(); });
+  document.querySelector('[data-action="percent"]').addEventListener('click', () => { haptic('light'); percent(); });
+  clearBtn.addEventListener('click', () => {
+    haptic('light');
+    if (clearBtn.textContent === 'AC') clearAll(); else clearEntry();
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key >= '0' && e.key <= '9') inputDigit(e.key);
+    else if (e.key === '.') inputDecimal();
+    else if (e.key === '+') chooseOperator('+');
+    else if (e.key === '-') chooseOperator('−');
+    else if (e.key === '*') chooseOperator('×');
+    else if (e.key === '/') { e.preventDefault(); chooseOperator('÷'); }
+    else if (e.key === 'Enter' || e.key === '=') equals();
+    else if (e.key === 'Escape') clearAll();
+    else if (e.key === 'Backspace') {
+      if (!overwrite && current.length > 1) current = current.slice(0, -1);
+      else current = '0';
+      updateDisplay();
+    }
+  });
+
+  updateDisplay();
+})();
+</script>
+
+</body>
+</html>
