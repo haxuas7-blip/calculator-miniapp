@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculator Mini-App | Solving Tools</title>
+<style>
+:root{--bg:#12130f;--surface:#1c1e17;--surface2:#262920;--ink:#f3f1e7;--muted:#a7ad98;--accent:#d6ff3f;--op:#3a3d30;--danger:#e0654a;--line:#3a3d32;--radius:18px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.app{max-width:760px;margin:auto;padding:18px 14px calc(24px + env(safe-area-inset-bottom))}
+header{padding:8px 4px 18px}
+.eyebrow{color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+h1{font-size:clamp(26px,6vw,38px);line-height:1.1;margin:8px 0}
+.sub{color:var(--muted);margin:0}
+nav{display:flex;gap:8px;overflow-x:auto;padding:4px 0 14px;scrollbar-width:none}
+nav button,.chip{white-space:nowrap;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);padding:10px 14px;font-weight:700}
+nav button.active{background:var(--accent);color:#12130f;border-color:var(--accent)}
+.panel{display:none}.panel.active{display:block}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin:0 0 14px}
+h2{font-size:20px;margin:0 0 6px} .hint{color:var(--muted);font-size:13px;margin:0 0 14px}
+.fieldgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+label{font-size:12px;color:var(--muted);font-weight:700}
+input,select{width:100%;min-width:0;background:#11120f;color:var(--ink);border:1px solid #464a3d;border-radius:11px;padding:12px}
+.action{background:var(--accent);color:#15160f;border:0;border-radius:12px;padding:12px 16px;font-weight:850;margin-top:12px}
+.secondary{background:var(--surface2);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:11px 14px;font-weight:700}
+.result{margin-top:12px;padding:13px;border-radius:12px;background:#282d1c;border:1px solid #454d2c;overflow-wrap:anywhere}
+.result strong{color:var(--accent);font-size:18px}.error{color:#ff9b83}
+.calc{max-width:480px;margin:auto}
+.tape{min-height:22px;color:var(--muted);font-size:13px;text-align:right;padding:5px;overflow-wrap:anywhere}
+.display{min-height:100px;display:flex;align-items:flex-end;justify-content:flex-end;padding:12px 6px 22px;font-size:clamp(42px,11vw,60px);word-break:break-all;text-align:right}
+.keygrid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.key{border:0;border-radius:18px;background:var(--surface2);color:var(--ink);min-height:66px;font-size:23px}
+.key.fn{color:var(--accent);font-size:18px}.key.op{background:var(--op);color:var(--accent)}.key.eq{background:var(--accent);color:#12130f}.key.zero{grid-column:span 2;text-align:left;padding-left:28px}
+.scikeys{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.scikeys button{padding:10px 2px;border-radius:10px;border:1px solid var(--line);background:var(--surface2);color:var(--ink)}
+.toolgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+.toolcard{background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:14px;text-align:left;color:var(--ink)}
+.toolcard b{display:block;margin-bottom:5px}.toolcard span{font-size:12px;color:var(--muted)}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:18px 0}
+@media(min-width:620px){.toolgrid{grid-template-columns:repeat(4,minmax(0,1fr))}.key{min-height:76px}.app{padding-top:26px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+<div class="eyebrow">HAXUAS • Mini tools</div>
+<h1>Calculator & Solvers</h1>
+<p class="sub">Everyday calculations and step-by-step-ready math helpers, in one place.</p>
+</header>
+<nav id="nav">
+<button class="active" data-panel="basic">Calculator</button>
+<button data-panel="scientific">Scientific</button>
+<button data-panel="equation">Equation</button>
+<button data-panel="quadratic">Quadratic</button>
+<button data-panel="age">Age</button>
+<button data-panel="units">Units</button>
+<button data-panel="bmi">BMI</button>
+<button data-panel="fractions">Fractions</button>
+<button data-panel="percent">Percentage</button>
+</nav>
+
+<section class="panel active" id="basic">
+<div class="card calc">
+<div class="tape" id="tape"></div><div class="display" id="display">0</div>
+<div class="keygrid">
+<button class="key fn" data-action="clear" id="clearBtn">AC</button><button class="key fn" data-action="negate">±</button><button class="key fn" data-action="percent">%</button><button class="key op" data-op="÷">÷</button>
+<button class="key" data-digit="7">7</button><button class="key" data-digit="8">8</button><button class="key" data-digit="9">9</button><button class="key op" data-op="×">×</button>
+<button class="key" data-digit="4">4</button><button class="key" data-digit="5">5</button><button class="key" data-digit="6">6</button><button class="key op" data-op="−">−</button>
+<button class="key" data-digit="1">1</button><button class="key" data-digit="2">2</button><button class="key" data-digit="3">3</button><button class="key op" data-op="+">+</button>
+<button class="key zero" data-digit="0">0</button><button class="key" data-action="decimal">.</button><button class="key eq" data-action="equals">=</button>
+</div></div></section>
+
+<section class="panel" id="scientific">
+<div class="card"><h2>Scientific calculator</h2><p class="hint">Enter a number, then choose a function. Trigonometric functions use degrees.</p>
+<div class="field"><label for="sciInput">Number / angle</label><input id="sciInput" type="number" value="30" step="any"></div>
+<div class="scikeys">
+<button data-sci="sin">sin</button><button data-sci="cos">cos</button><button data-sci="tan">tan</button><button data-sci="sqrt">√x</button>
+<button data-sci="square">x²</button><button data-sci="cube">x³</button><button data-sci="log">log₁₀</button><button data-sci="ln">ln</button>
+<button data-sci="abs">|x|</button><button data-sci="inv">1/x</button><button data-sci="factorial">x!</button><button data-sci="pi">× π</button>
+</div><div class="result" id="sciResult">Result: <strong>—</strong></div></div></section>
+
+<section class="panel" id="equation">
+<div class="card"><h2>Linear equation solver</h2><p class="hint">Solve ax + b = c.</p>
+<div class="fieldgrid"><div class="field"><label for="linA">a</label><input id="linA" type="number" value="2" step="any"></div><div class="field"><label for="linB">b</label><input id="linB" type="number" value="3" step="any"></div><div class="field"><label for="linC">c</label><input id="linC" type="number" value="11" step="any"></div></div>
+<button class="action" id="solveLinear">Solve equation</button><div class="result" id="linearResult">Enter values and solve.</div></div></section>
+
+<section class="panel" id="quadratic">
+<div class="card"><h2>Quadratic equation solver</h2><p class="hint">Solve ax² + bx + c = 0, including complex roots when needed.</p>
+<div class="fieldgrid"><div class="field"><label for="quadA">a</label><input id="quadA" type="number" value="1" step="any"></div><div class="field"><label for="quadB">b</label><input id="quadB" type="number" value="-5" step="any"></div><div class="field"><label for="quadC">c</label><input id="quadC" type="number" value="6" step="any"></div></div>
+<button class="action" id="solveQuad">Solve quadratic</button><div class="result" id="quadResult">Enter coefficients and solve.</div></div></section>
+
+<section class="panel" id="age">
+<div class="card"><h2>Age calculator</h2><p class="hint">Calculate age in years, months and days.</p>
+<div class="fieldgrid"><div class="field"><label for="birthDate">Date of birth</label><input id="birthDate" type="date"></div><div class="field"><label for="asOfDate">Calculate age on</label><input id="asOfDate" type="date"></div></div>
+<button class="action" id="calcAge">Calculate age</button><div class="result" id="ageResult">Choose both dates.</div></div></section>
+
+<section class="panel" id="units">
+<div class="card"><h2>Unit converter</h2><p class="hint">Convert common length, mass, temperature and distance units.</p>
+<div class="field"><label for="unitType">Category</label><select id="unitType"><option value="length">Length</option><option value="mass">Mass</option><option value="temp">Temperature</option><option value="time">Time</option><option value="volume">Volume</option></select></div>
+<div class="fieldgrid" style="margin-top:10px"><div class="field"><label for="unitValue">Value</label><input id="unitValue" type="number" value="1" step="any"></div><div class="field"><label for="unitFrom">From</label><select id="unitFrom"></select></div><div class="field"><label for="unitTo">To</label><select id="unitTo"></select></div></div>
+<button class="action" id="convertUnit">Convert</button><div class="result" id="unitResult">Choose units and convert.</div></div></section>
+
+<section class="panel" id="bmi">
+<div class="card"><h2>BMI calculator</h2><p class="hint">Uses weight in kilograms and height in centimetres. BMI is a screening measure, not a diagnosis.</p>
+<div class="fieldgrid"><div class="field"><label for="weight">Weight (kg)</label><input id="weight" type="number" value="65" min="0" step="any"></div><div class="field"><label for="height">Height (cm)</label><input id="height" type="number" value="170" min="0" step="any"></div></div>
+<button class="action" id="calcBmi">Calculate BMI</button><div class="result" id="bmiResult">Enter your height and weight.</div></div></section>
+
+<section class="panel" id="fractions">
+<div class="card"><h2>Fractions solver</h2><p class="hint">Add, subtract, multiply or divide two fractions and simplify the answer.</p>
+<div class="fieldgrid"><div class="field"><label for="n1">First numerator</label><input id="n1" type="number" value="1" step="1"></div><div class="field"><label for="d1">First denominator</label><input id="d1" type="number" value="2" step="1"></div><div class="field"><label for="fracOp">Operation</label><select id="fracOp"><option value="+">Add (+)</option><option value="-">Subtract (−)</option><option value="*">Multiply (×)</option><option value="/">Divide (÷)</option></select></div><div class="field"><label for="n2">Second numerator</label><input id="n2" type="number" value="1" step="1"></div><div class="field"><label for="d2">Second denominator</label><input id="d2" type="number" value="3" step="1"></div></div>
+<button class="action" id="calcFrac">Solve fractions</button><div class="result" id="fracResult">Enter fractions and solve.</div></div></section>
+
+<section class="panel" id="percent">
+<div class="card"><h2>Percentage calculator</h2><p class="hint">Find a percentage of a number, or the percentage change between two values.</p>
+<div class="field"><label for="pctMode">Calculation</label><select id="pctMode"><option value="of">What is X% of Y?</option><option value="change">Percentage change from old to new</option><option value="what">X is what percent of Y?</option></select></div>
+<div class="fieldgrid" style="margin-top:10px"><div class="field"><label for="pctX">X / Old value</label><input id="pctX" type="number" value="15" step="any"></div><div class="field"><label for="pctY">Y / New value</label><input id="pctY" type="number" value="200" step="any"></div></div>
+<button class="action" id="calcPct">Calculate percentage</button><div class="result" id="pctResult">Enter values and calculate.</div></div></section>
+
+<section class="panel" id="home">
+<div class="card"><h2>All solving tools</h2><p class="hint">Choose any tool from the top menu.</p><div class="toolgrid">
+<button class="toolcard" data-goto="scientific"><b>Scientific</b><span>Trig, powers, logs</span></button>
+<button class="toolcard" data-goto="equation"><b>Equation</b><span>Linear equations</span></button>
+<button class="toolcard" data-goto="quadratic"><b>Quadratic</b><span>Find roots</span></button>
+<button class="toolcard" data-goto="age"><b>Age</b><span>Years, months, days</span></button>
+<button class="toolcard" data-goto="units"><b>Unit converter</b><span>Length, mass, more</span></button>
+<button class="toolcard" data-goto="bmi"><b>BMI</b><span>Height and weight</span></button>
+<button class="toolcard" data-goto="fractions"><b>Fractions</b><span>Simplify operations</span></button>
+<button class="toolcard" data-goto="percent"><b>Percentage</b><span>Percent and change</span></button>
+</div></div></section>
+<footer>Calculator Mini-App • Calculations run on your device</footer>
+</div>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+document.querySelectorAll('[data-panel]').forEach(btn=>btn.addEventListener('click',()=>{
+ document.querySelectorAll('[data-panel]').forEach(b=>b.classList.toggle('active',b===btn));
+ document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===btn.dataset.panel));
+ window.scrollTo({top:0,behavior:'smooth'});
+}));
+document.querySelectorAll('[data-goto]').forEach(btn=>btn.addEventListener('click',()=>{
+ const target=btn.dataset.goto; const nav=document.querySelector(`[data-panel="${target}"]`); if(nav)nav.click();
+}));
+/* Original four-operation calculator behaviour retained */
+let current='0', previous=null, operator=null, overwrite=true, tapeText='';
+const display=$('display'), tape=$('tape'), clearBtn=$('clearBtn');
+function fmt(s){if(s==='Error')return s;let neg=s.startsWith('-'),v=neg?s.slice(1):s,[i,d]=v.split('.');i=i.replace(/\B(?=(\d{3})+(?!\d))/g,',');return(neg?'-':'')+i+(d!==undefined?'.'+d:'')}
+function update(){display.textContent=fmt(current);tape.textContent=tapeText;clearBtn.textContent=overwrite&&current==='0'&&previous===null?'AC':'C';document.querySelectorAll('.key.op').forEach(b=>b.classList.toggle('active-op',operator===b.dataset.op&&overwrite))}
+function calc(a,b,op){a=+a;b=+b;let r;switch(op){case'+':r=a+b;break;case'−':r=a-b;break;case'×':r=a*b;break;case'÷':r=b===0?NaN:a/b;break;default:return String(b)}if(!Number.isFinite(r))return'Error';return String(Math.round((r+Number.EPSILON)*1e10)/1e10)}
+function digit(d){if(current==='Error')current='0';if(overwrite){current=d;overwrite=false}else{if(current.replace('-','').length>=12)return;current=current==='0'?d:current+d}update()}
+function decimal(){if(current==='Error'){current='0';overwrite=false}if(overwrite){current='0.';overwrite=false}else if(!current.includes('.'))current+='.';update()}
+function choose(op){if(current==='Error')return;if(operator!==null&&!overwrite)current=calc(previous,current,operator);previous=current;operator=op;overwrite=true;tapeText=fmt(previous)+' '+op;update()}
+function equals(){if(operator===null||previous===null)return;let a=previous,b=current,op=operator;tapeText=fmt(a)+' '+op+' '+fmt(b)+' =';current=calc(a,b,op);previous=null;operator=null;overwrite=true;update()}
+function clearAll(){current='0';previous=null;operator=null;overwrite=true;tapeText='';update()}
+document.querySelectorAll('[data-digit]').forEach(b=>b.addEventListener('click',()=>digit(b.dataset.digit)));
+document.querySelectorAll('[data-op]').forEach(b=>b.addEventListener('click',()=>choose(b.dataset.op)));
+document.querySelector('[data-action="decimal"]').addEventListener('click',decimal);
+document.querySelector('[data-action="equals"]').addEventListener('click',equals);
+document.querySelector('[data-action="clear"]').addEventListener('click',()=>{if(clearBtn.textContent==='AC')clearAll();else{current='0';overwrite=true;update()}});
+document.querySelector('[data-action="negate"]').addEventListener('click',()=>{if(current!=='0'&&current!=='Error')current=current.startsWith('-')?current.slice(1):'-'+current;update()});
+document.querySelector('[data-action="percent"]').addEventListener('click',()=>{if(current!=='Error')current=String(+current/100);update()});
+window.addEventListener('keydown',e=>{if(e.key>='0'&&e.key<='9')digit(e.key);else if(e.key==='.')decimal();else if(e.key==='+')choose('+');else if(e.key==='-')choose('−');else if(e.key==='*')choose('×');else if(e.key==='/'){e.preventDefault();choose('÷')}else if(e.key==='Enter'||e.key==='=')equals();else if(e.key==='Escape')clearAll()});
+update();
+/* Scientific calculator */
+function show(id,html){$(id).innerHTML=html}
+document.querySelectorAll('[data-sci]').forEach(b=>b.addEventListener('click',()=>{
+ const x=Number($('sciInput').value),op=b.dataset.sci;let r,label='';
+ if(!Number.isFinite(x)){show('sciResult','Enter a valid number.');return}
+ switch(op){case'sin':r=Math.sin(x*Math.PI/180);break;case'cos':r=Math.cos(x*Math.PI/180);break;case'tan':r=Math.tan(x*Math.PI/180);break;case'sqrt':r=Math.sqrt(x);break;case'square':r=x*x;break;case'cube':r=x*x*x;break;case'log':r=Math.log10(x);break;case'ln':r=Math.log(x);break;case'abs':r=Math.abs(x);break;case'inv':r=1/x;break;case'factorial':if(x<0||!Number.isInteger(x)||x>170){r=NaN}else{r=1;for(let i=2;i<=x;i++)r*=i}break;case'pi':r=x*Math.PI;break}
+ show('sciResult',Number.isFinite(r)?`Result: <strong>${Number(r.toPrecision(12))}</strong>`:'<span class="error">Undefined for this input.</span>');
+}));
+$('solveLinear').addEventListener('click',()=>{let a=+$('linA').value,b=+$('linB').value,c=+$('linC').value;if(![a,b,c].every(Number.isFinite)){show('linearResult','Please enter valid values.');return}if(a===0){show('linearResult',b===c?'Any value of x is a solution.':'No solution because a = 0 and b ≠ c.');return}show('linearResult',`<strong>x = ${Number(((c-b)/a).toPrecision(12))}</strong><br>Rearranged: ${a}x = ${c-b}`)});
+$('solveQuad').addEventListener('click',()=>{let a=+$('quadA').value,b=+$('quadB').value,c=+$('quadC').value;if(![a,b,c].every(Number.isFinite)){show('quadResult','Please enter valid coefficients.');return}if(a===0){if(b===0){show('quadResult',c===0?'Every x is a solution.':'No solution.');return}show('quadResult',`This is linear: <strong>x = ${Number((-c/b).toPrecision(12))}</strong>`);return}let d=b*b-4*a*c;if(d>=0){let r1=(-b+Math.sqrt(d))/(2*a),r2=(-b-Math.sqrt(d))/(2*a);show('quadResult',`Discriminant: ${d}<br>Root 1: <strong>${Number(r1.toPrecision(12))}</strong><br>Root 2: <strong>${Number(r2.toPrecision(12))}</strong>`)}else{let real=-b/(2*a),imag=Math.sqrt(-d)/(2*a);show('quadResult',`Discriminant: ${d}<br>Root 1: <strong>${Number(real.toPrecision(8))} + ${Number(Math.abs(imag).toPrecision(8))}i</strong><br>Root 2: <strong>${Number(real.toPrecision(8))} − ${Number(Math.abs(imag).toPrecision(8))}i</strong>`)}});
+const today=new Date();const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+$('asOfDate').value=iso(today);
+$('calcAge').addEventListener('click',()=>{if(!$('birthDate').value||!$('asOfDate').value){show('ageResult','Please choose both dates.');return}let birth=new Date($('birthDate').value+'T00:00:00'),end=new Date($('asOfDate').value+'T00:00:00');if(birth>end){show('ageResult','Date of birth must be on or before the calculation date.');return}let y=end.getFullYear()-birth.getFullYear(),m=end.getMonth()-birth.getMonth(),d=end.getDate()-birth.getDate();if(d<0){m--;let days=new Date(end.getFullYear(),end.getMonth(),0).getDate();d+=days}if(m<0){y--;m+=12}show('ageResult',`<strong>${y} years, ${m} months, ${d} days</strong>`)});
+const unitMap={
+length:{m:1,km:1000,cm:.01,mm:.001,mi:1609.344,yd:.9144,ft:.3048,in:.0254},
+mass:{kg:1,g:.001,mg:.000001,lb:.45359237,oz:.028349523125},
+time:{sec:1,min:60,hr:3600,day:86400},
+volume:{L:1,mL:.001,m3:1000,gal:3.785411784},
+temp:{C:1,F:1,K:1}
+};
+const unitLabels={m:'Meters (m)',km:'Kilometers (km)',cm:'Centimeters (cm)',mm:'Millimeters (mm)',mi:'Miles (mi)',yd:'Yards (yd)',ft:'Feet (ft)',in:'Inches (in)',kg:'Kilograms (kg)',g:'Grams (g)',mg:'Milligrams (mg)',lb:'Pounds (lb)',oz:'Ounces (oz)',sec:'Seconds',min:'Minutes',hr:'Hours',day:'Days',L:'Liters (L)',mL:'Milliliters (mL)',m3:'Cubic meters (m³)',gal:'US gallons',C:'Celsius (°C)',F:'Fahrenheit (°F)',K:'Kelvin (K)'};
+function fillUnits(){let type=$('unitType').value,keys=Object.keys(unitMap[type]);['unitFrom','unitTo'].forEach(id=>{$(id).innerHTML=keys.map(k=>`<option value="${k}">${unitLabels[k]}</option>`).join('')});if(keys.length>1)$('unitTo').selectedIndex=1}
+$('unitType').addEventListener('change',fillUnits);fillUnits();
+function toC(v,u){return u==='C'?v:u==='F'?(v-32)*5/9:v-273.15}
+function fromC(v,u){return u==='C'?v:u==='F'?v*9/5+32:v+273.15}
+$('convertUnit').addEventListener('click',()=>{let type=$('unitType').value,v=+$('unitValue').value,from=$('unitFrom').value,to=$('unitTo').value;if(!Number.isFinite(v)){show('unitResult','Enter a valid number.');return}let r;if(type==='temp')r=fromC(toC(v,from),to);else r=v*unitMap[type][from]/unitMap[type][to];show('unitResult',`<strong>${Number(r.toPrecision(12))} ${to}</strong>`)});
+$('calcBmi').addEventListener('click',()=>{let w=+$('weight').value,h=+$('height').value/100;if(!(w>0&&h>0&&Number.isFinite(w)&&Number.isFinite(h))){show('bmiResult','Enter a positive height and weight.');return}let bmi=w/(h*h),category=bmi<18.5?'Underweight':bmi<25?'Healthy-weight range':bmi<30?'Overweight range':'Obesity range';show('bmiResult',`BMI: <strong>${bmi.toFixed(1)}</strong><br>${category}<br><small>Adult categories are general screening guidance only.</small>`)});
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){let t=b;b=a%b;a=t}return a||1}
+$('calcFrac').addEventListener('click',()=>{let n1=+$('n1').value,d1=+$('d1').value,n2=+$('n2').value,d2=+$('d2').value,op=$('fracOp').value;if(![n1,d1,n2,d2].every(Number.isInteger)||d1===0||d2===0){show('fracResult','Use whole-number numerators and non-zero denominators.');return}let n,d;if(op==='+'){n=n1*d2+n2*d1;d=d1*d2}else if(op==='-'){n=n1*d2-n2*d1;d=d1*d2}else if(op==='*'){n=n1*n2;d=d1*d2}else{if(n2===0){show('fracResult','Cannot divide by a zero fraction.');return}n=n1*d2;d=d1*n2}if(d<0){n=-n;d=-d}let g=gcd(n,d);show('fracResult',`Exact result: <strong>${n}/${d}</strong><br>Simplified: <strong>${n/g}/${d/g}</strong><br>Decimal: ${Number((n/d).toPrecision(12))}`)});
+$('calcPct').addEventListener('click',()=>{let x=+$('pctX').value,y=+$('pctY').value,mode=$('pctMode').value;if(!Number.isFinite(x)||!Number.isFinite(y)){show('pctResult','Enter valid numbers.');return}if(mode==='of')show('pctResult',`<strong>${Number((x*y/100).toPrecision(12))}</strong> is ${x}% of ${y}.`);else if(mode==='change'){if(x===0){show('pctResult','Old value cannot be zero for percentage change.');return}let p=(y-x)/Math.abs(x)*100;show('pctResult',`Change: <strong>${Number((y-x).toPrecision(12))}</strong><br>Percentage change: <strong>${Number(p.toPrecision(8))}%</strong>`)}else{if(y===0){show('pctResult','Y cannot be zero.');return}show('pctResult',`<strong>${Number((x/y*100).toPrecision(10))}%</strong>`) }});
+})();
+</script>
+</body>
+</html>
