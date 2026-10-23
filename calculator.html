@@ -2,342 +2,1330 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Calculator</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0b1020">
+<title>Calculus — Math Toolkit</title>
+
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
 <style>
-  :root{
-    --bg: #12130f;
-    --surface: #1c1e17;
-    --surface-2: #262920;
-    --tape: #8a8f7c;
-    --ink: #f3f1e7;
-    --accent: #d6ff3f;
-    --accent-ink: #12130f;
-    --op: #3a3d30;
-    --danger: #e0654a;
-    --radius: 20px;
-  }
+:root{
+  --bg:#090d18;
+  --card:#11182a;
+  --card2:#182137;
+  --border:#25304a;
+  --text:#f5f7ff;
+  --muted:#8d98b3;
+  --accent:#58e6ff;
+  --accent2:#9cff57;
+  --danger:#ff647c;
+  --radius:18px;
+}
 
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
 
-  html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    background: var(--bg);
-    color: var(--ink);
-    font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
-    overscroll-behavior: none;
-    user-select: none;
-  }
+html,body{
+  margin:0;
+  min-height:100%;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
 
-  .app {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    height: 100dvh;
-    max-width: 480px;
-    margin: 0 auto;
-    padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
-  }
+body{
+  overscroll-behavior:none;
+}
 
-  /* Tape: running log of the expression, like a receipt printer */
-  .tape {
-    flex: 0 0 auto;
-    min-height: 22px;
-    padding: 4px 6px 10px;
-    font-size: 13px;
-    color: var(--tape);
-    letter-spacing: 0.02em;
-    white-space: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .tape::-webkit-scrollbar { display: none; }
+button,input,select{
+  font:inherit;
+}
 
-  .display-wrap {
-    flex: 1 1 auto;
-    display: flex;
-    align-items: flex-end;
-    justify-content: flex-end;
-    padding: 0 6px 18px;
-    min-height: 90px;
-  }
+button{
+  cursor:pointer;
+}
 
-  .display {
-    font-size: clamp(38px, 11vw, 58px);
-    font-weight: 500;
-    letter-spacing: -0.01em;
-    line-height: 1;
-    word-break: break-all;
-    text-align: right;
-    transition: opacity 0.15s ease;
-  }
-  .display.err { color: var(--danger); font-size: clamp(22px, 6vw, 30px); }
+.app{
+  width:min(100%,560px);
+  margin:auto;
+  padding:14px 14px calc(90px + env(safe-area-inset-bottom));
+}
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    flex: 0 0 auto;
-  }
+.header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:5px 2px 18px;
+}
 
-  button.key {
-    appearance: none;
-    border: none;
-    outline: none;
-    border-radius: var(--radius);
-    background: var(--surface);
-    color: var(--ink);
-    font-family: inherit;
-    font-size: 24px;
-    font-weight: 500;
-    padding: 0;
-    aspect-ratio: 1 / 0.82;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    transition: transform 0.06s ease, background 0.12s ease;
-  }
-  button.key:active { transform: scale(0.94); background: var(--surface-2); }
+.brand{
+  display:flex;
+  align-items:center;
+  gap:11px;
+}
 
-  button.key.fn {
-    background: var(--surface-2);
-    color: var(--accent);
-    font-size: 19px;
-  }
+.logo{
+  width:45px;
+  height:45px;
+  display:grid;
+  place-items:center;
+  border-radius:14px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#071018;
+  font-size:24px;
+  font-weight:900;
+}
 
-  button.key.op {
-    background: var(--op);
-    color: var(--accent);
-    font-size: 26px;
-  }
-  button.key.op.active-op {
-    background: var(--accent);
-    color: var(--accent-ink);
-  }
+.brand h1{
+  margin:0;
+  font-size:20px;
+}
 
-  button.key.eq {
-    background: var(--accent);
-    color: var(--accent-ink);
-    font-size: 26px;
-  }
+.brand p{
+  margin:2px 0 0;
+  color:var(--muted);
+  font-size:11px;
+}
 
-  button.key.zero { grid-column: span 2; aspect-ratio: unset; justify-content: flex-start; padding-left: 30px; }
+.badge{
+  padding:7px 10px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  color:var(--accent);
+  font-size:11px;
+}
 
-  .digit-count {
-    position: absolute;
-    bottom: 6px;
-    right: 10px;
-    font-size: 9px;
-    color: var(--tape);
-    opacity: 0.6;
-  }
+.tabs{
+  display:flex;
+  gap:7px;
+  overflow-x:auto;
+  padding-bottom:9px;
+  scrollbar-width:none;
+}
+
+.tabs::-webkit-scrollbar{display:none}
+
+.tab{
+  flex:0 0 auto;
+  border:1px solid var(--border);
+  background:var(--card);
+  color:var(--muted);
+  padding:9px 13px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:700;
+}
+
+.tab.active{
+  background:var(--accent);
+  color:#061018;
+  border-color:var(--accent);
+}
+
+.panel{
+  display:none;
+}
+
+.panel.active{
+  display:block;
+  animation:fade .16s ease;
+}
+
+@keyframes fade{
+  from{opacity:.3;transform:translateY(3px)}
+  to{opacity:1;transform:none}
+}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:14px;
+  margin-bottom:12px;
+}
+
+.card-title{
+  margin:0 0 4px;
+  font-size:15px;
+}
+
+.description{
+  margin:0 0 13px;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.45;
+}
+
+.calc-display{
+  min-height:118px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  align-items:flex-end;
+  overflow:hidden;
+}
+
+.expression{
+  min-height:21px;
+  color:var(--muted);
+  font-size:13px;
+  width:100%;
+  overflow-x:auto;
+  text-align:right;
+  white-space:nowrap;
+}
+
+.answer{
+  width:100%;
+  margin-top:8px;
+  text-align:right;
+  font-size:clamp(36px,11vw,55px);
+  line-height:1;
+  word-break:break-all;
+  font-weight:650;
+}
+
+.mode-row{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  margin-top:12px;
+}
+
+.small-btn{
+  border:1px solid var(--border);
+  background:var(--card2);
+  color:var(--text);
+  border-radius:10px;
+  padding:8px 11px;
+  font-size:11px;
+}
+
+.keypad{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+}
+
+.key{
+  min-height:58px;
+  border:0;
+  border-radius:15px;
+  background:var(--card);
+  color:var(--text);
+  font-size:20px;
+  font-weight:650;
+  transition:.08s;
+}
+
+.key:active{
+  transform:scale(.94);
+}
+
+.key.fn{
+  background:var(--card2);
+  color:var(--accent);
+  font-size:15px;
+}
+
+.key.op{
+  background:#223047;
+  color:var(--accent2);
+}
+
+.key.eq{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#061018;
+}
+
+.science-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  margin-bottom:8px;
+}
+
+.science-grid .key{
+  min-height:48px;
+  font-size:13px;
+}
+
+.input{
+  width:100%;
+  border:1px solid var(--border);
+  background:#0b1120;
+  color:var(--text);
+  outline:none;
+  border-radius:13px;
+  padding:13px;
+  margin:5px 0 10px;
+}
+
+.input:focus{
+  border-color:var(--accent);
+}
+
+label{
+  display:block;
+  color:var(--muted);
+  font-size:11px;
+  margin:5px 2px 1px;
+}
+
+.primary{
+  width:100%;
+  border:0;
+  border-radius:13px;
+  padding:13px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#061018;
+  font-weight:800;
+}
+
+.secondary{
+  width:100%;
+  border:1px solid var(--border);
+  border-radius:13px;
+  padding:12px;
+  background:var(--card2);
+  color:var(--text);
+  font-weight:700;
+}
+
+.result{
+  margin-top:12px;
+  padding:13px;
+  border:1px solid var(--border);
+  border-radius:13px;
+  background:#0b1120;
+  min-height:47px;
+  word-break:break-word;
+  line-height:1.5;
+}
+
+.result strong{
+  color:var(--accent2);
+}
+
+.two{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+
+.three{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+}
+
+canvas{
+  width:100%;
+  height:300px;
+  display:block;
+  background:#080d18;
+  border-radius:14px;
+  border:1px solid var(--border);
+}
+
+.history-item{
+  padding:11px 0;
+  border-bottom:1px solid var(--border);
+}
+
+.history-item:last-child{
+  border-bottom:0;
+}
+
+.history-expression{
+  color:var(--muted);
+  font-size:12px;
+}
+
+.history-result{
+  margin-top:4px;
+  font-size:17px;
+  color:var(--accent2);
+}
+
+.empty{
+  color:var(--muted);
+  text-align:center;
+  padding:30px 10px;
+  font-size:13px;
+}
+
+.bottom{
+  position:fixed;
+  left:50%;
+  transform:translateX(-50%);
+  bottom:0;
+  width:min(100%,560px);
+  padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+  background:linear-gradient(transparent,var(--bg) 25%);
+}
+
+.bottom-inner{
+  display:flex;
+  justify-content:space-around;
+  background:rgba(17,24,42,.96);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:8px;
+  backdrop-filter:blur(14px);
+}
+
+.nav{
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  font-size:10px;
+  padding:7px 10px;
+  border-radius:10px;
+}
+
+.nav.active{
+  color:var(--accent);
+  background:var(--card2);
+}
+
+.error{
+  color:var(--danger)!important;
+}
+
+.note{
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.5;
+  margin-top:10px;
+}
 </style>
 </head>
-<body>
 
+<body>
 <div class="app">
-  <div class="tape" id="tape"></div>
-  <div class="display-wrap">
-    <div class="display" id="display">0</div>
+
+<header class="header">
+  <div class="brand">
+    <div class="logo">∫</div>
+    <div>
+      <h1>Calculus</h1>
+      <p>CALCULATE • SOLVE • LEARN</p>
+    </div>
+  </div>
+  <div class="badge">Mini App</div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-panel="calculator">Calculator</button>
+  <button class="tab" data-panel="calculus">Calculus</button>
+  <button class="tab" data-panel="equations">Equations</button>
+  <button class="tab" data-panel="graph">Graph</button>
+  <button class="tab" data-panel="converter">Convert</button>
+  <button class="tab" data-panel="history">History</button>
+</div>
+
+<!-- CALCULATOR -->
+<section class="panel active" id="calculator">
+
+  <div class="card calc-display">
+    <div class="expression" id="expression"></div>
+    <div class="answer" id="answer">0</div>
+
+    <div class="mode-row">
+      <button class="small-btn" id="angleBtn">DEG</button>
+      <button class="small-btn" id="copyBtn">Copy Answer</button>
+    </div>
   </div>
 
-  <div class="grid">
-    <button class="key fn" data-action="clear" id="clearBtn">AC</button>
-    <button class="key fn" data-action="negate">±</button>
+  <div class="science-grid">
+    <button class="key fn" data-fn="sin">sin</button>
+    <button class="key fn" data-fn="cos">cos</button>
+    <button class="key fn" data-fn="tan">tan</button>
+    <button class="key fn" data-fn="sqrt">√</button>
+
+    <button class="key fn" data-fn="log">log</button>
+    <button class="key fn" data-fn="ln">ln</button>
+    <button class="key fn" data-value="(">(</button>
+    <button class="key fn" data-value=")">)</button>
+
+    <button class="key fn" data-value="Math.PI">π</button>
+    <button class="key fn" data-value="Math.E">e</button>
+    <button class="key fn" data-value="**2">x²</button>
+    <button class="key fn" data-value="**">xʸ</button>
+  </div>
+
+  <div class="keypad">
+    <button class="key fn" data-action="clear">AC</button>
+    <button class="key fn" data-action="back">⌫</button>
     <button class="key fn" data-action="percent">%</button>
-    <button class="key op" data-op="÷">÷</button>
+    <button class="key op" data-value="/">÷</button>
 
-    <button class="key" data-digit="7">7</button>
-    <button class="key" data-digit="8">8</button>
-    <button class="key" data-digit="9">9</button>
-    <button class="key op" data-op="×">×</button>
+    <button class="key" data-value="7">7</button>
+    <button class="key" data-value="8">8</button>
+    <button class="key" data-value="9">9</button>
+    <button class="key op" data-value="*">×</button>
 
-    <button class="key" data-digit="4">4</button>
-    <button class="key" data-digit="5">5</button>
-    <button class="key" data-digit="6">6</button>
-    <button class="key op" data-op="−">−</button>
+    <button class="key" data-value="4">4</button>
+    <button class="key" data-value="5">5</button>
+    <button class="key" data-value="6">6</button>
+    <button class="key op" data-value="-">−</button>
 
-    <button class="key" data-digit="1">1</button>
-    <button class="key" data-digit="2">2</button>
-    <button class="key" data-digit="3">3</button>
-    <button class="key op" data-op="+">+</button>
+    <button class="key" data-value="1">1</button>
+    <button class="key" data-value="2">2</button>
+    <button class="key" data-value="3">3</button>
+    <button class="key op" data-value="+">+</button>
 
-    <button class="key zero" data-digit="0">0</button>
-    <button class="key" data-action="decimal">.</button>
+    <button class="key" data-value="0">0</button>
+    <button class="key" data-value=".">.</button>
+    <button class="key fn" data-action="ans">Ans</button>
     <button class="key eq" data-action="equals">=</button>
+  </div>
+</section>
+
+<!-- CALCULUS -->
+<section class="panel" id="calculus">
+
+  <div class="card">
+    <h2 class="card-title">Derivative</h2>
+    <p class="description">
+      Numerical derivative at a point. Use x as the variable.
+    </p>
+
+    <label>Function f(x)</label>
+    <input class="input" id="derivativeFunction" value="x^2" placeholder="Example: x^2 + 3*x">
+
+    <label>At x =</label>
+    <input class="input" id="derivativePoint" type="number" value="2">
+
+    <button class="primary" id="deriveBtn">Calculate derivative</button>
+    <div class="result" id="derivativeResult">Result will appear here.</div>
+  </div>
+
+  <div class="card">
+    <h2 class="card-title">Definite Integral</h2>
+    <p class="description">
+      Numerically calculate the area from a to b.
+    </p>
+
+    <label>Function f(x)</label>
+    <input class="input" id="integralFunction" value="x^2" placeholder="Example: sin(x)">
+
+    <div class="two">
+      <div>
+        <label>Lower limit</label>
+        <input class="input" id="integralA" type="number" value="0">
+      </div>
+      <div>
+        <label>Upper limit</label>
+        <input class="input" id="integralB" type="number" value="2">
+      </div>
+    </div>
+
+    <button class="primary" id="integralBtn">Calculate integral</button>
+    <div class="result" id="integralResult">Result will appear here.</div>
+  </div>
+
+</section>
+
+<!-- EQUATIONS -->
+<section class="panel" id="equations">
+
+  <div class="card">
+    <h2 class="card-title">Quadratic Equation</h2>
+    <p class="description">
+      Solve equations in the form ax² + bx + c = 0.
+    </p>
+
+    <div class="three">
+      <div>
+        <label>a</label>
+        <input class="input" id="qa" type="number" value="1">
+      </div>
+      <div>
+        <label>b</label>
+        <input class="input" id="qb" type="number" value="-3">
+      </div>
+      <div>
+        <label>c</label>
+        <input class="input" id="qc" type="number" value="2">
+      </div>
+    </div>
+
+    <button class="primary" id="quadraticBtn">Solve equation</button>
+    <div class="result" id="quadraticResult">Solutions will appear here.</div>
+  </div>
+
+  <div class="card">
+    <h2 class="card-title">Linear Equation</h2>
+    <p class="description">Solve ax + b = c.</p>
+
+    <div class="three">
+      <input class="input" id="la" type="number" value="2" placeholder="a">
+      <input class="input" id="lb" type="number" value="4" placeholder="b">
+      <input class="input" id="lc" type="number" value="10" placeholder="c">
+    </div>
+
+    <button class="primary" id="linearBtn">Solve</button>
+    <div class="result" id="linearResult">Solution will appear here.</div>
+  </div>
+
+</section>
+
+<!-- GRAPH -->
+<section class="panel" id="graph">
+
+  <div class="card">
+    <h2 class="card-title">Function Grapher</h2>
+    <p class="description">
+      Enter a function of x, such as x^2, sin(x), or x^3 - 4*x.
+    </p>
+
+    <input class="input" id="graphFunction" value="sin(x)" placeholder="f(x)">
+
+    <div class="two">
+      <div>
+        <label>Minimum x</label>
+        <input class="input" id="graphMin" type="number" value="-10">
+      </div>
+      <div>
+        <label>Maximum x</label>
+        <input class="input" id="graphMax" type="number" value="10">
+      </div>
+    </div>
+
+    <button class="primary" id="graphBtn">Plot graph</button>
+
+    <div style="height:12px"></div>
+    <canvas id="graphCanvas"></canvas>
+  </div>
+
+</section>
+
+<!-- CONVERTER -->
+<section class="panel" id="converter">
+
+  <div class="card">
+    <h2 class="card-title">Unit Converter</h2>
+
+    <label>Category</label>
+    <select class="input" id="category">
+      <option value="length">Length</option>
+      <option value="mass">Mass</option>
+      <option value="temperature">Temperature</option>
+    </select>
+
+    <label>Value</label>
+    <input class="input" id="convertValue" type="number" value="1">
+
+    <div class="two">
+      <div>
+        <label>From</label>
+        <select class="input" id="fromUnit"></select>
+      </div>
+
+      <div>
+        <label>To</label>
+        <select class="input" id="toUnit"></select>
+      </div>
+    </div>
+
+    <button class="primary" id="convertBtn">Convert</button>
+    <div class="result" id="convertResult">Converted value will appear here.</div>
+  </div>
+
+  <div class="card">
+    <h2 class="card-title">Percentage Calculator</h2>
+
+    <label>What is</label>
+    <input class="input" id="percentValue" type="number" value="20">
+
+    <label>% of</label>
+    <input class="input" id="percentTotal" type="number" value="100">
+
+    <button class="primary" id="percentageBtn">Calculate</button>
+    <div class="result" id="percentageResult">Result will appear here.</div>
+  </div>
+
+</section>
+
+<!-- HISTORY -->
+<section class="panel" id="history">
+  <div class="card">
+    <div class="two">
+      <div>
+        <h2 class="card-title">History</h2>
+        <p class="description">Recent calculations saved on this device.</p>
+      </div>
+      <button class="small-btn" id="clearHistory">Clear</button>
+    </div>
+
+    <div id="historyList"></div>
+  </div>
+</section>
+
+</div>
+
+<div class="bottom">
+  <div class="bottom-inner">
+    <button class="nav active" data-panel="calculator">Calculator</button>
+    <button class="nav" data-panel="calculus">Calculus</button>
+    <button class="nav" data-panel="graph">Graph</button>
+    <button class="nav" data-panel="history">History</button>
   </div>
 </div>
 
 <script>
-(function () {
-  const tg = window.Telegram && window.Telegram.WebApp;
-  if (tg) {
-    tg.ready();
-    tg.expand();
-    try {
-      document.documentElement.style.setProperty('--bg', tg.themeParams.bg_color ? tg.themeParams.bg_color : '#12130f');
-    } catch (e) {}
-  }
+(() => {
 
-  const display = document.getElementById('display');
-  const tape = document.getElementById('tape');
-  const clearBtn = document.getElementById('clearBtn');
+const tg = window.Telegram?.WebApp;
 
-  let current = '0';
-  let previous = null;
-  let operator = null;
-  let overwrite = true;
-  let expressionTape = '';
+if(tg){
+  tg.ready();
+  tg.expand();
 
-  function haptic(style) {
-    if (tg && tg.HapticFeedback) {
-      if (style === 'light') tg.HapticFeedback.impactOccurred('light');
-      else if (style === 'medium') tg.HapticFeedback.impactOccurred('medium');
-      else if (style === 'error') tg.HapticFeedback.notificationOccurred('error');
+  try{
+    tg.setHeaderColor("#090d18");
+    tg.setBackgroundColor("#090d18");
+  }catch(e){}
+}
+
+function haptic(type="light"){
+  try{
+    if(!tg?.HapticFeedback) return;
+
+    if(type==="success"){
+      tg.HapticFeedback.notificationOccurred("success");
+    }else if(type==="error"){
+      tg.HapticFeedback.notificationOccurred("error");
+    }else{
+      tg.HapticFeedback.impactOccurred(type);
     }
-  }
+  }catch(e){}
+}
 
-  function formatNumber(numStr) {
-    if (numStr === 'Error') return numStr;
-    const neg = numStr.startsWith('-');
-    let s = neg ? numStr.slice(1) : numStr;
-    let [intPart, decPart] = s.split('.');
-    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    let out = intPart + (decPart !== undefined ? '.' + decPart : '');
-    return neg ? '-' + out : out;
-  }
+/* ---------------- NAVIGATION ---------------- */
 
-  function updateDisplay() {
-    display.textContent = formatNumber(current);
-    display.classList.toggle('err', current === 'Error');
-    tape.textContent = expressionTape;
-    clearBtn.textContent = overwrite && current === '0' && previous === null ? 'AC' : 'C';
-
-    document.querySelectorAll('.key.op').forEach(btn => {
-      btn.classList.toggle('active-op', operator === btn.dataset.op && overwrite);
-    });
-  }
-
-  function calc(a, b, op) {
-    a = parseFloat(a); b = parseFloat(b);
-    let result;
-    switch (op) {
-      case '+': result = a + b; break;
-      case '−': result = a - b; break;
-      case '×': result = a * b; break;
-      case '÷': result = b === 0 ? NaN : a / b; break;
-      default: return b;
-    }
-    if (!isFinite(result)) return 'Error';
-    result = Math.round((result + Number.EPSILON) * 1e10) / 1e10;
-    return String(result);
-  }
-
-  function inputDigit(d) {
-    if (current === 'Error') { current = '0'; }
-    if (overwrite) {
-      current = d;
-      overwrite = false;
-    } else {
-      if (current.replace('-', '').length >= 12) return;
-      current = current === '0' ? d : current + d;
-    }
-    updateDisplay();
-  }
-
-  function inputDecimal() {
-    if (current === 'Error') { current = '0'; overwrite = false; }
-    if (overwrite) { current = '0.'; overwrite = false; return updateDisplay(); }
-    if (!current.includes('.')) current += '.';
-    updateDisplay();
-  }
-
-  function chooseOperator(op) {
-    if (current === 'Error') return;
-    if (operator !== null && !overwrite) {
-      current = calc(previous, current, operator);
-    }
-    previous = current;
-    operator = op;
-    overwrite = true;
-    expressionTape = formatNumber(previous) + ' ' + operator;
-    updateDisplay();
-  }
-
-  function equals() {
-    if (operator === null || previous === null) return;
-    const a = previous, b = current, op = operator;
-    expressionTape = formatNumber(a) + ' ' + op + ' ' + formatNumber(b) + ' =';
-    current = calc(a, b, op);
-    previous = null;
-    operator = null;
-    overwrite = true;
-    if (current === 'Error') haptic('error'); else haptic('medium');
-    updateDisplay();
-  }
-
-  function clearAll() {
-    current = '0'; previous = null; operator = null; overwrite = true; expressionTape = '';
-    updateDisplay();
-  }
-
-  function clearEntry() {
-    current = '0'; overwrite = true;
-    updateDisplay();
-  }
-
-  function negate() {
-    if (current === 'Error' || current === '0') return;
-    current = current.startsWith('-') ? current.slice(1) : '-' + current;
-    updateDisplay();
-  }
-
-  function percent() {
-    if (current === 'Error') return;
-    current = String(parseFloat(current) / 100);
-    updateDisplay();
-  }
-
-  document.querySelectorAll('[data-digit]').forEach(btn => {
-    btn.addEventListener('click', () => { haptic('light'); inputDigit(btn.dataset.digit); });
+function openPanel(name){
+  document.querySelectorAll(".panel").forEach(p=>{
+    p.classList.toggle("active",p.id===name);
   });
 
-  document.querySelectorAll('[data-op]').forEach(btn => {
-    btn.addEventListener('click', () => { haptic('light'); chooseOperator(btn.dataset.op); });
+  document.querySelectorAll("[data-panel]").forEach(b=>{
+    b.classList.toggle("active",b.dataset.panel===name);
   });
 
-  document.querySelector('[data-action="decimal"]').addEventListener('click', () => { haptic('light'); inputDecimal(); });
-  document.querySelector('[data-action="equals"]').addEventListener('click', equals);
-  document.querySelector('[data-action="negate"]').addEventListener('click', () => { haptic('light'); negate(); });
-  document.querySelector('[data-action="percent"]').addEventListener('click', () => { haptic('light'); percent(); });
-  clearBtn.addEventListener('click', () => {
-    haptic('light');
-    if (clearBtn.textContent === 'AC') clearAll(); else clearEntry();
+  if(name==="history") renderHistory();
+  if(name==="graph") setTimeout(drawGraph,100);
+
+  haptic("light");
+}
+
+document.querySelectorAll("[data-panel]").forEach(btn=>{
+  btn.addEventListener("click",()=>openPanel(btn.dataset.panel));
+});
+
+/* ---------------- HISTORY ---------------- */
+
+let history=[];
+
+try{
+  history=JSON.parse(localStorage.getItem("calculusHistory")||"[]");
+}catch(e){
+  history=[];
+}
+
+function saveHistory(expression,result){
+  history.unshift({
+    expression,
+    result:String(result),
+    time:new Date().toLocaleString()
   });
 
-  window.addEventListener('keydown', (e) => {
-    if (e.key >= '0' && e.key <= '9') inputDigit(e.key);
-    else if (e.key === '.') inputDecimal();
-    else if (e.key === '+') chooseOperator('+');
-    else if (e.key === '-') chooseOperator('−');
-    else if (e.key === '*') chooseOperator('×');
-    else if (e.key === '/') { e.preventDefault(); chooseOperator('÷'); }
-    else if (e.key === 'Enter' || e.key === '=') equals();
-    else if (e.key === 'Escape') clearAll();
-    else if (e.key === 'Backspace') {
-      if (!overwrite && current.length > 1) current = current.slice(0, -1);
-      else current = '0';
-      updateDisplay();
+  history=history.slice(0,50);
+
+  try{
+    localStorage.setItem("calculusHistory",JSON.stringify(history));
+  }catch(e){}
+}
+
+function renderHistory(){
+  const list=document.getElementById("historyList");
+
+  if(!history.length){
+    list.innerHTML='<div class="empty">No calculations yet.</div>';
+    return;
+  }
+
+  list.innerHTML=history.map(item=>`
+    <div class="history-item">
+      <div class="history-expression">${escapeHTML(item.expression)}</div>
+      <div class="history-result">${escapeHTML(item.result)}</div>
+    </div>
+  `).join("");
+}
+
+document.getElementById("clearHistory").onclick=()=>{
+  history=[];
+  localStorage.removeItem("calculusHistory");
+  renderHistory();
+  haptic("light");
+};
+
+function escapeHTML(str){
+  return String(str)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;");
+}
+
+/* ---------------- SAFE MATH ---------------- */
+
+function prepareExpression(input,variableValue=null){
+  let s=String(input).trim();
+
+  if(!s) throw new Error("Empty expression");
+
+  s=s.replace(/\^/g,"**");
+
+  const replacements={
+    "sin":"Math.sin",
+    "cos":"Math.cos",
+    "tan":"Math.tan",
+    "sqrt":"Math.sqrt",
+    "abs":"Math.abs",
+    "log":"Math.log10",
+    "ln":"Math.log",
+    "exp":"Math.exp"
+  };
+
+  Object.entries(replacements).forEach(([a,b])=>{
+    s=s.replace(new RegExp("\\b"+a+"\\b","g"),b);
+  });
+
+  s=s.replace(/\bpi\b/gi,"Math.PI");
+
+  if(variableValue!==null){
+    s=s.replace(/\bx\b/g,`(${Number(variableValue)})`);
+  }
+
+  if(!/^[0-9+\-*/().,\sA-Za-z_]*$/.test(s)){
+    throw new Error("Invalid characters");
+  }
+
+  return s;
+}
+
+function evaluateMath(input,x=null){
+  const prepared=prepareExpression(input,x);
+
+  const value=Function(
+    '"use strict";return ('+prepared+')'
+  )();
+
+  if(typeof value!=="number" || !Number.isFinite(value)){
+    throw new Error("Invalid result");
+  }
+
+  return value;
+}
+
+function niceNumber(n){
+  if(!Number.isFinite(n)) return "Error";
+
+  if(Math.abs(n)<1e-12) n=0;
+
+  return Number(n.toPrecision(12)).toString();
+}
+
+/* ---------------- MAIN CALCULATOR ---------------- */
+
+const expression=document.getElementById("expression");
+const answer=document.getElementById("answer");
+
+let calcExpression="";
+let lastAnswer=0;
+let angleMode="DEG";
+
+function refreshCalculator(){
+  expression.textContent=calcExpression||"";
+}
+
+document.querySelectorAll("#calculator [data-value]").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    calcExpression+=btn.dataset.value;
+    refreshCalculator();
+    haptic("light");
+  });
+});
+
+document.querySelectorAll("#calculator [data-fn]").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    const fn=btn.dataset.fn;
+
+    if(fn==="sqrt"){
+      calcExpression+="sqrt(";
+    }else{
+      calcExpression+=fn+"(";
+    }
+
+    refreshCalculator();
+    haptic("light");
+  });
+});
+
+document.querySelector('[data-action="clear"]').onclick=()=>{
+  calcExpression="";
+  answer.textContent="0";
+  refreshCalculator();
+};
+
+document.querySelector('[data-action="back"]').onclick=()=>{
+  calcExpression=calcExpression.slice(0,-1);
+  refreshCalculator();
+};
+
+document.querySelector('[data-action="ans"]').onclick=()=>{
+  calcExpression+=String(lastAnswer);
+  refreshCalculator();
+};
+
+document.querySelector('[data-action="percent"]').onclick=()=>{
+  calcExpression+="%";
+  refreshCalculator();
+};
+
+function calculateMain(){
+  if(!calcExpression) return;
+
+  try{
+    let exp=calcExpression;
+
+    exp=exp.replace(
+      /(\d+(?:\.\d+)?)%/g,
+      "($1/100)"
+    );
+
+    let prepared=prepareExpression(exp);
+
+    if(angleMode==="DEG"){
+      prepared=prepared
+        .replace(/Math\.sin\(([^()]*)\)/g,"Math.sin(($1)*Math.PI/180)")
+        .replace(/Math\.cos\(([^()]*)\)/g,"Math.cos(($1)*Math.PI/180)")
+        .replace(/Math\.tan\(([^()]*)\)/g,"Math.tan(($1)*Math.PI/180)");
+    }
+
+    const result=Function('"use strict";return ('+prepared+')')();
+
+    if(!Number.isFinite(result)) throw new Error();
+
+    lastAnswer=result;
+    const formatted=niceNumber(result);
+
+    answer.textContent=formatted;
+    answer.classList.remove("error");
+
+    saveHistory(calcExpression,formatted);
+    haptic("success");
+
+  }catch(e){
+    answer.textContent="Error";
+    answer.classList.add("error");
+    haptic("error");
+  }
+}
+
+document.querySelector('[data-action="equals"]').onclick=calculateMain;
+
+document.getElementById("angleBtn").onclick=()=>{
+  angleMode=angleMode==="DEG"?"RAD":"DEG";
+  document.getElementById("angleBtn").textContent=angleMode;
+  haptic("light");
+};
+
+document.getElementById("copyBtn").onclick=async()=>{
+  try{
+    await navigator.clipboard.writeText(answer.textContent);
+    document.getElementById("copyBtn").textContent="Copied";
+    haptic("success");
+
+    setTimeout(()=>{
+      document.getElementById("copyBtn").textContent="Copy Answer";
+    },1000);
+  }catch(e){}
+};
+
+/* ---------------- DERIVATIVE ---------------- */
+
+document.getElementById("deriveBtn").onclick=()=>{
+  const resultBox=document.getElementById("derivativeResult");
+
+  try{
+    const fn=document.getElementById("derivativeFunction").value;
+    const x=Number(document.getElementById("derivativePoint").value);
+
+    const h=1e-5;
+
+    const derivative=
+      (evaluateMath(fn,x+h)-evaluateMath(fn,x-h))/(2*h);
+
+    const result=niceNumber(derivative);
+
+    resultBox.innerHTML=
+      `f′(${x}) ≈ <strong>${result}</strong>`;
+
+    saveHistory(`Derivative of ${fn} at x=${x}`,result);
+    haptic("success");
+
+  }catch(e){
+    resultBox.innerHTML='<span class="error">Could not evaluate this function.</span>';
+    haptic("error");
+  }
+};
+
+/* ---------------- INTEGRAL ---------------- */
+
+document.getElementById("integralBtn").onclick=()=>{
+  const box=document.getElementById("integralResult");
+
+  try{
+    const fn=document.getElementById("integralFunction").value;
+    const a=Number(document.getElementById("integralA").value);
+    const b=Number(document.getElementById("integralB").value);
+
+    const n=1000;
+    const h=(b-a)/n;
+
+    let sum=evaluateMath(fn,a)+evaluateMath(fn,b);
+
+    for(let i=1;i<n;i++){
+      const x=a+i*h;
+      sum+=(i%2===0?2:4)*evaluateMath(fn,x);
+    }
+
+    const result=sum*h/3;
+    const formatted=niceNumber(result);
+
+    box.innerHTML=
+      `∫ from ${a} to ${b} ≈ <strong>${formatted}</strong>`;
+
+    saveHistory(`Integral ${fn}, ${a} → ${b}`,formatted);
+    haptic("success");
+
+  }catch(e){
+    box.innerHTML='<span class="error">Could not evaluate this integral.</span>';
+    haptic("error");
+  }
+};
+
+/* ---------------- QUADRATIC ---------------- */
+
+document.getElementById("quadraticBtn").onclick=()=>{
+  const box=document.getElementById("quadraticResult");
+
+  const a=Number(document.getElementById("qa").value);
+  const b=Number(document.getElementById("qb").value);
+  const c=Number(document.getElementById("qc").value);
+
+  if(a===0){
+    box.innerHTML='<span class="error">a cannot be zero for a quadratic equation.</span>';
+    return;
+  }
+
+  const d=b*b-4*a*c;
+
+  let result;
+
+  if(d>0){
+    const x1=(-b+Math.sqrt(d))/(2*a);
+    const x2=(-b-Math.sqrt(d))/(2*a);
+
+    result=`x₁ = ${niceNumber(x1)}<br>x₂ = ${niceNumber(x2)}`;
+
+  }else if(d===0){
+    const x=-b/(2*a);
+    result=`x = ${niceNumber(x)}`;
+
+  }else{
+    const real=-b/(2*a);
+    const imag=Math.sqrt(-d)/(2*a);
+
+    result=
+      `x₁ = ${niceNumber(real)} + ${niceNumber(Math.abs(imag))}i<br>`+
+      `x₂ = ${niceNumber(real)} - ${niceNumber(Math.abs(imag))}i`;
+  }
+
+  box.innerHTML=`<strong>${result}</strong>`;
+  saveHistory(`${a}x² + ${b}x + ${c} = 0`,box.textContent);
+  haptic("success");
+};
+
+/* ---------------- LINEAR ---------------- */
+
+document.getElementById("linearBtn").onclick=()=>{
+  const a=Number(document.getElementById("la").value);
+  const b=Number(document.getElementById("lb").value);
+  const c=Number(document.getElementById("lc").value);
+
+  const box=document.getElementById("linearResult");
+
+  if(a===0){
+    box.innerHTML='<span class="error">a cannot be zero.</span>';
+    return;
+  }
+
+  const x=(c-b)/a;
+
+  box.innerHTML=`x = <strong>${niceNumber(x)}</strong>`;
+  saveHistory(`${a}x + ${b} = ${c}`,niceNumber(x));
+  haptic("success");
+};
+
+/* ---------------- GRAPH ---------------- */
+
+const canvas=document.getElementById("graphCanvas");
+
+function drawGraph(){
+  const rect=canvas.getBoundingClientRect();
+
+  if(rect.width===0) return;
+
+  const ratio=window.devicePixelRatio||1;
+
+  canvas.width=rect.width*ratio;
+  canvas.height=300*ratio;
+
+  const ctx=canvas.getContext("2d");
+  ctx.scale(ratio,ratio);
+
+  const w=rect.width;
+  const h=300;
+
+  ctx.clearRect(0,0,w,h);
+
+  const minX=Number(document.getElementById("graphMin").value);
+  const maxX=Number(document.getElementById("graphMax").value);
+
+  if(!(maxX>minX)) return;
+
+  const fn=document.getElementById("graphFunction").value;
+
+  let values=[];
+
+  for(let px=0;px<w;px++){
+    const x=minX+(px/w)*(maxX-minX);
+
+    try{
+      const y=evaluateMath(fn,x);
+
+      if(Number.isFinite(y)){
+        values.push({px,x,y});
+      }
+    }catch(e){}
+  }
+
+  if(!values.length) return;
+
+  let maxAbs=Math.max(
+    1,
+    ...values
+      .map(p=>Math.abs(p.y))
+      .filter(v=>Number.isFinite(v)&&v<1e6)
+  );
+
+  maxAbs=Math.min(maxAbs,1000);
+
+  const toY=y=>h/2-(y/maxAbs)*(h*.42);
+
+  ctx.strokeStyle="#25304a";
+  ctx.lineWidth=1;
+
+  ctx.beginPath();
+  ctx.moveTo(0,h/2);
+  ctx.lineTo(w,h/2);
+
+  const zeroX=(-minX)/(maxX-minX)*w;
+
+  if(zeroX>=0&&zeroX<=w){
+    ctx.moveTo(zeroX,0);
+    ctx.lineTo(zeroX,h);
+  }
+
+  ctx.stroke();
+
+  ctx.strokeStyle="#58e6ff";
+  ctx.lineWidth=2;
+  ctx.beginPath();
+
+  let started=false;
+
+  values.forEach(p=>{
+    const py=toY(p.y);
+
+    if(py<-1000||py>1300){
+      started=false;
+      return;
+    }
+
+    if(!started){
+      ctx.moveTo(p.px,py);
+      started=true;
+    }else{
+      ctx.lineTo(p.px,py);
     }
   });
 
-  updateDisplay();
+  ctx.stroke();
+}
+
+document.getElementById("graphBtn").onclick=()=>{
+  drawGraph();
+  haptic("light");
+};
+
+window.addEventListener("resize",()=>{
+  if(document.getElementById("graph").classList.contains("active")){
+    drawGraph();
+  }
+});
+
+/* ---------------- CONVERTER ---------------- */
+
+const units={
+  length:{
+    meter:1,
+    kilometer:1000,
+    centimeter:.01,
+    millimeter:.001,
+    mile:1609.344,
+    yard:.9144,
+    foot:.3048,
+    inch:.0254
+  },
+
+  mass:{
+    kilogram:1,
+    gram:.001,
+    milligram:.000001,
+    pound:.45359237,
+    ounce:.028349523125
+  },
+
+  temperature:{
+    celsius:"c",
+    fahrenheit:"f",
+    kelvin:"k"
+  }
+};
+
+const category=document.getElementById("category");
+const fromUnit=document.getElementById("fromUnit");
+const toUnit=document.getElementById("toUnit");
+
+function populateUnits(){
+  const names=Object.keys(units[category.value]);
+
+  fromUnit.innerHTML="";
+  toUnit.innerHTML="";
+
+  names.forEach((name,i)=>{
+    fromUnit.add(new Option(name,name));
+    toUnit.add(new Option(name,name));
+
+    if(i===1) toUnit.value=name;
+  });
+}
+
+category.onchange=populateUnits;
+populateUnits();
+
+function convertTemperature(value,from,to){
+  let c;
+
+  if(from==="celsius") c=value;
+  if(from==="fahrenheit") c=(value-32)*5/9;
+  if(from==="kelvin") c=value-273.15;
+
+  if(to==="celsius") return c;
+  if(to==="fahrenheit") return c*9/5+32;
+  if(to==="kelvin") return c+273.15;
+}
+
+document.getElementById("convertBtn").onclick=()=>{
+  const value=Number(document.getElementById("convertValue").value);
+  const cat=category.value;
+
+  let result;
+
+  if(cat==="temperature"){
+    result=convertTemperature(value,fromUnit.value,toUnit.value);
+  }else{
+    const base=value*units[cat][fromUnit.value];
+    result=base/units[cat][toUnit.value];
+  }
+
+  const formatted=niceNumber(result);
+
+  document.getElementById("convertResult").innerHTML=
+    `${value} ${fromUnit.value} = <strong>${formatted} ${toUnit.value}</strong>`;
+
+  saveHistory(
+    `${value} ${fromUnit.value} → ${toUnit.value}`,
+    formatted
+  );
+
+  haptic("success");
+};
+
+/* ---------------- PERCENTAGE ---------------- */
+
+document.getElementById("percentageBtn").onclick=()=>{
+  const p=Number(document.getElementById("percentValue").value);
+  const total=Number(document.getElementById("percentTotal").value);
+
+  const result=p/100*total;
+  const formatted=niceNumber(result);
+
+  document.getElementById("percentageResult").innerHTML=
+    `${p}% of ${total} = <strong>${formatted}</strong>`;
+
+  saveHistory(`${p}% of ${total}`,formatted);
+  haptic("success");
+};
+
+/* ---------------- KEYBOARD ---------------- */
+
+window.addEventListener("keydown",e=>{
+  if(!document.getElementById("calculator").classList.contains("active")) return;
+
+  if(/^[0-9.+\-*/()]$/.test(e.key)){
+    calcExpression+=e.key;
+    refreshCalculator();
+  }
+
+  if(e.key==="Enter"){
+    e.preventDefault();
+    calculateMain();
+  }
+
+  if(e.key==="Backspace"){
+    calcExpression=calcExpression.slice(0,-1);
+    refreshCalculator();
+  }
+
+  if(e.key==="Escape"){
+    calcExpression="";
+    answer.textContent="0";
+    refreshCalculator();
+  }
+});
+
+renderHistory();
+
 })();
 </script>
-
 </body>
 </html>
